@@ -5,7 +5,7 @@ library(units)
 library(ggplot2)
 library(rayshader)
 
-# země, která nás zajímá (Čechy Čechům!)
+# země, která nás zajímá (Čechy Čechům!) - ale jiná by fungovala obdobně
 zipak <- "https://geodata-eu-central-1-kontur-public.s3.amazonaws.com/kontur_datasets/kontur_population_CZ_20220630.gpkg.gz"
 
 if(!file.exists("target.gz")) curl::curl_download(url = zipak, destfile = "target.gz")
@@ -17,57 +17,44 @@ R.utils::gunzip("target.gz", destname = "target.gpkg", overwrite = TRUE, remove 
 country <- sf::st_read("target.gpkg") %>% 
   st_transform(3857) # web mercator, pro sichr
 
-# Define aspect ratio based on bounding box
-bb <- st_bbox(country)
-
-# Retrieve bottom left/right coordinates to find width and height values
-bottom_left <- st_point(c(bb[["xmin"]], bb[["ymin"]])) |>
-  st_sfc(crs = st_crs(country))
-
-bottom_right <- st_point(c(bb[["xmax"]], bb[["ymin"]])) |>
-  st_sfc(crs = st_crs(country))
-
-# Use distance between the two points to find width
-width <- st_distance(bottom_left, bottom_right)
-
-top_left <- st_point(c(bb[["xmin"]], bb[["ymax"]])) |>
-  st_sfc(crs = st_crs(country))
-
-# Use distance between bottom and top left to find heigh
-height <- st_distance(bottom_left, top_left)
-
-# Handle conditions of width or height being the longer side
-if(width > height) {
-  w_ratio <- 1
-  h_ratio <- height / width
-} else {
-  h_ratio <- 1
-  w_ratio <- width / height
-} 
-
-
-# Convert to raster so we can then convert to matrix
-size <- 1500
-
+# z vektoru raster - menší stačí... pozor! formát 3:2 funguje pro Česko, není platný obecně
 plot_src <- st_rasterize(country, 
-                         nx = floor(size * w_ratio), 
-                         ny = floor(size * h_ratio))
+                         nx = 900, 
+                         ny = 600)
 
+# z rasteru matici! velikost jako raster
 matice <- matrix(plot_src$population, 
-                 nrow = floor(size * w_ratio), 
-                 ncol = floor(size * h_ratio))
+                 nrow = 900, 
+                 ncol = 600)
 
+# barvičky pro vykreslení / inspirováno https://www.metmuseum.org/art/collection/search/11145
 barvicky <- grDevices::colorRampPalette(MetBrewer::met.brewer(name="Homer1"))(256)
 
-# vykreslit vlastní rayshading
+# vykreslit obrázek
 height_shade(matice,
              texture = barvicky) %>%
   plot_3d(heightmap = matice,
-          zscale = 50,
+          zscale = 90,
           solid = FALSE,
+          shadow = TRUE,
+          shadowdepth = -1,
+          shadow_darkness = 4/5,
           theta = 0,
-          windowsize = c(9000, 6000),
+          phi = 35,
+          windowsize = c(2200, 1500),
           zoom = 0.5) 
 
-# uložit pro budoucí generace...
-render_snapshot(filename = "country.png")
+# rayshade! pozor, není rychlé (ani trochu)
+render_highquality(
+  "country.png",
+  parallel = TRUE, 
+  samples = 400,
+  light = FALSE, 
+  interactive = FALSE,
+  environment_light = "phalzer_forest_01_2k.hdr", # https://polyhaven.com/a/phalzer_forest_01
+  intensity_env = 1.5,
+  rotate_env = 180,
+  width = 1500, 
+  height = 1000
+)
+
