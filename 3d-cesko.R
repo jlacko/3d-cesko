@@ -65,7 +65,6 @@ height_shade(matice,
   plot_3d(heightmap = matice,
           zscale = 50,
           solid = FALSE,
-          shadow = FALSE,
           theta = 0,
           windowsize = c(9000, 6000),
           zoom = 0.5) 
