@@ -48,13 +48,13 @@ height_shade(matice,
 render_highquality(
   "country.png",
   parallel = TRUE, 
-  samples = 400,
-  light = FALSE, 
+  samples = 500,
+  light = TRUE, 
+  lightdirection = 210,
   interactive = FALSE,
-  environment_light = "phalzer_forest_01_2k.hdr", # https://polyhaven.com/a/phalzer_forest_01
-  intensity_env = 1.5,
+  intensity_env = 2,
   rotate_env = 180,
-  width = 1500, 
-  height = 1000
+  width = 3000, 
+  height = 2000
 )
 
