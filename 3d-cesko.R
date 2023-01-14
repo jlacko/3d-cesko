@@ -51,9 +51,8 @@ render_highquality(
   samples = 500,
   light = TRUE, 
   lightdirection = 210,
+  lightintensity = 750,
   interactive = FALSE,
-  intensity_env = 2,
-  rotate_env = 180,
   width = 3000, 
   height = 2000
 )
